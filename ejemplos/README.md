@@ -307,5 +307,3 @@ log.txt
 ```
 
 ---
-
-¿Querés adaptar este proyecto para usar menú por consola o pruebas automatizadas? Lo podemos extender fácilmente.

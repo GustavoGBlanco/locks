@@ -1,176 +1,311 @@
 # Ejemplos de `lock` en C# (detalle por ejemplo)
 
-Este documento explica en profundidad cada uno de los 10 ejemplos de uso de `lock` en C#, incluyendo por qué `lock` es la mejor opción para ese caso.
+Este documento explica en profundidad cada uno de los 10 ejemplos de uso de `lock` en C#, incluyendo su propósito, ejecución y por qué `lock` es la mejor opción para ese caso. Todos los ejemplos fueron organizados y adaptados para poder ejecutarse fácilmente en un entorno multihilo.
 
 ---
 
 ## 🧪 Ejemplo 1: Contador compartido
 
 ```csharp
-lock (_lock)
+private static readonly object _lock = new();
+private static int _contador = 0;
+
+public static void Incrementar()
 {
-    _contador++;
+    lock (_lock)
+    {
+        _contador++;
+    }
+}
+
+public static int GetContador()
+{
+    lock (_lock)
+    {
+        return _contador;
+    }
 }
 ```
 
-🔍 `lock` garantiza que solo un hilo puede modificar `_contador` a la vez, evitando condiciones de carrera.
+🔍 Se incrementa un contador desde múltiples hilos. Se expone el valor final mediante el método `GetContador()`.
 
 ✅ **¿Por qué `lock`?**  
-Porque es el enfoque más limpio y directo para proteger una variable simple. `Monitor` sería redundante y más verboso.
+Es el enfoque más directo y limpio. `Monitor` sería más verboso sin aportar valor. `lock` es suficiente para proteger una operación tan simple.
 
 ---
 
 ## 🧪 Ejemplo 2: Lista compartida
 
 ```csharp
-lock (_lockLista)
+private static readonly object _lockLista = new();
+private static List<string> _mensajes = new();
+
+public static void AgregarMensaje(string mensaje)
 {
-    _mensajes.Add(mensaje);
+    lock (_lockLista)
+    {
+        _mensajes.Add(mensaje);
+    }
+}
+
+public static List<string> GetMensajes()
+{
+    lock (_lockLista)
+    {
+        return new List<string>(_mensajes);
+    }
 }
 ```
 
-🔍 Protege el acceso concurrente a una lista compartida.
+🔍 Agrega mensajes a una lista compartida desde múltiples hilos. Se accede con `GetMensajes()` para mostrar el resultado.
 
 ✅ **¿Por qué `lock`?**  
-Ofrece mayor flexibilidad que `ConcurrentBag` o `ConcurrentQueue` cuando se necesita agregar lógica extra como validaciones.
+A diferencia de `ConcurrentBag`, este patrón permite insertar lógica adicional como validaciones, logs, o restricciones.
 
 ---
 
 ## 🧪 Ejemplo 3: Imprimir seguro en consola
 
 ```csharp
-lock (_consoleLock)
+private static readonly object _consoleLock = new();
+
+public static void ImprimirSeguro(string mensaje)
 {
-    Console.WriteLine(mensaje);
+    lock (_consoleLock)
+    {
+        Console.WriteLine(mensaje);
+    }
 }
 ```
 
-🔍 Previene que varios hilos impriman simultáneamente y mezclen su salida.
+🔍 Asegura que los mensajes en consola no se mezclen cuando varios hilos imprimen simultáneamente.
 
 ✅ **¿Por qué `lock`?**  
-Evita mensajes intercalados. Alternativas como `Monitor` agregarían complejidad sin valor agregado.
+Evita mensajes intercalados. `Monitor` o cualquier otra alternativa sería innecesariamente compleja.
 
 ---
 
 ## 🧪 Ejemplo 4: Depósitos y retiros
 
 ```csharp
-lock (_lockSaldo)
+private static readonly object _lockSaldo = new();
+private static int _saldo = 1000;
+
+public static void Depositar(int monto)
 {
-    if (_saldo >= monto)
-        _saldo -= monto;
+    lock (_lockSaldo)
+    {
+        _saldo += monto;
+    }
+}
+
+public static void Retirar(int monto)
+{
+    lock (_lockSaldo)
+    {
+        if (_saldo >= monto)
+            _saldo -= monto;
+    }
 }
 ```
 
-🔍 Protege lógica de negocio crítica que involucra lectura y escritura.
+🔍 Se protege el acceso a una cuenta simulada con retiros y depósitos desde múltiples hilos.
 
 ✅ **¿Por qué `lock`?**  
-Permite agrupar operaciones atómicas de forma segura. Más natural que `ReaderWriterLockSlim` para este caso.
+Permite mantener la lógica completa como una transacción segura. `ReaderWriterLockSlim` sería innecesariamente complejo.
 
 ---
 
 ## 🧪 Ejemplo 5: Cola FIFO personalizada
 
 ```csharp
-lock (_colaLock)
+private static readonly object _colaLock = new();
+private static Queue<string> _cola = new();
+
+public static void Encolar(string dato)
 {
-    _cola.Enqueue(dato);
+    lock (_colaLock)
+    {
+        _cola.Enqueue(dato);
+    }
+}
+
+public static string Desencolar()
+{
+    lock (_colaLock)
+    {
+        if (_cola.Count == 0)
+            throw new InvalidOperationException("La cola está vacía.");
+        return _cola.Dequeue();
+    }
 }
 ```
 
-🔍 Controla el acceso a una cola con validaciones opcionales.
+🔍 Se simula una cola FIFO donde se puede controlar validaciones, errores y estructura personalizada.
 
 ✅ **¿Por qué `lock`?**  
-Más flexible que `ConcurrentQueue` si necesitás reglas específicas de negocio.
+`ConcurrentQueue` no permite lanzar excepciones o imponer reglas de negocio. `lock` da más flexibilidad.
 
 ---
 
 ## 🧪 Ejemplo 6: Locks anidados
 
 ```csharp
-lock (_lockA)
+private static readonly object _lockA = new();
+private static readonly object _lockB = new();
+
+public static void Transferir()
 {
-    lock (_lockB)
+    lock (_lockA)
     {
-        // lógica
+        lock (_lockB)
+        {
+            // lógica de transferencia
+        }
     }
 }
 ```
 
-🔍 Protege el uso conjunto de múltiples recursos.
+🔍 Protege dos recursos simultáneamente, útil para operaciones como transferencias entre cuentas.
 
 ✅ **¿Por qué `lock`?**  
-Es reentrante y sencillo si se sigue un orden fijo. `Mutex` o `Monitor` no agregan beneficios en este caso.
+Es reentrante, seguro y claro si se respeta el orden de adquisición. Alternativas como `Mutex` son más costosas.
 
 ---
 
 ## 🧪 Ejemplo 7: Contador por usuario
 
 ```csharp
-lock (_lockUsuarios)
-{
-    if (!_contadores.ContainsKey(usuario))
-        _contadores[usuario] = 0;
+private static readonly object _lockUsuarios = new();
+private static Dictionary<string, int> _contadores = new();
 
-    _contadores[usuario]++;
+public static void IncrementarUsuario(string usuario)
+{
+    lock (_lockUsuarios)
+    {
+        if (!_contadores.ContainsKey(usuario))
+            _contadores[usuario] = 0;
+
+        _contadores[usuario]++;
+    }
 }
 ```
 
-🔍 Controla una colección con lógica condicional.
+🔍 Cuenta ocurrencias por usuario de forma concurrente.
 
 ✅ **¿Por qué `lock`?**  
-`ConcurrentDictionary` no permite lógica de inicialización personalizada como en este ejemplo.
+`ConcurrentDictionary` no permite lógica condicional o inicialización personalizada tan claramente.
 
 ---
 
 ## 🧪 Ejemplo 8: Escritura en archivo
 
 ```csharp
-lock (_fileLock)
+private static readonly object _fileLock = new();
+
+public static void GuardarLog(string texto)
 {
-    File.AppendAllText("log.txt", texto + Environment.NewLine);
+    lock (_fileLock)
+    {
+        File.AppendAllText("log.txt", texto + Environment.NewLine);
+    }
 }
 ```
 
-🔍 Protege acceso a disco entre hilos del mismo proceso.
+🔍 Protege el acceso concurrente a un archivo desde múltiples hilos.
 
 ✅ **¿Por qué `lock`?**  
-`Mutex` es innecesario a menos que haya múltiples procesos. `lock` es más rápido y claro.
+Más simple que un `Mutex`, que solo sería necesario para sincronizar entre procesos. `lock` basta si estás en el mismo proceso.
 
 ---
 
 ## 🧪 Ejemplo 9: Registro de errores
 
 ```csharp
-lock (_errorLock)
+private static readonly object _errorLock = new();
+private static List<string> _errores = new();
+
+public static void Procesar(Action tarea)
 {
-    _errores.Add(ex.Message);
+    try
+    {
+        tarea();
+    }
+    catch (Exception ex)
+    {
+        lock (_errorLock)
+        {
+            _errores.Add(ex.Message);
+        }
+    }
 }
 ```
 
-🔍 Asegura que múltiples hilos no corrompan la colección de errores.
+🔍 Captura y almacena mensajes de error desde cualquier hilo que falle.
 
 ✅ **¿Por qué `lock`?**  
-Fácil de implementar. `Monitor` o eventos no aportan ventajas aquí.
+Es la opción más clara para proteger acceso concurrente a listas. Otros mecanismos serían innecesarios para este caso puntual.
 
 ---
 
 ## 🧪 Ejemplo 10: Control de stock limitado
 
 ```csharp
-lock (_stockLock)
+private static readonly object _stockLock = new();
+private static int _stock = 5;
+
+public static bool IntentarComprar(string usuario)
 {
-    if (_stock > 0)
+    lock (_stockLock)
     {
-        _stock--;
-        Console.WriteLine($"{usuario} compró. Stock restante: {_stock}");
+        if (_stock > 0)
+        {
+            _stock--;
+            Console.WriteLine($"{usuario} compró. Stock restante: {_stock}");
+            return true;
+        }
+        else
+        {
+            Console.WriteLine($"{usuario} no pudo comprar. Sin stock.");
+            return false;
+        }
     }
 }
 ```
 
-🔍 Sincroniza el decremento de una variable crítica.
+🔍 Simula una venta concurrente de productos limitados.
 
 ✅ **¿Por qué `lock`?**  
-Es el patrón clásico de sincronización simple. `Semaphore` sería excesivo si no se necesita control de acceso múltiple.
+Es un patrón clásico. `SemaphoreSlim` podría usarse si fuera necesario limitar acceso por diseño, pero `lock` es más adecuado cuando hay lógica crítica que depende de condiciones internas (como stock > 0).
 
 ---
+
+## 🚀 ¿Cómo ejecutar este proyecto?
+
+1. Asegurate de tener [.NET 9 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/9.0) instalado.
+2. Abrí la carpeta del proyecto en Visual Studio Code.
+3. En terminal, corré:
+
+```bash
+dotnet run
+```
+
+---
+
+## ✅ Recomendación de `.gitignore`
+
+Incluí un archivo `.gitignore` para evitar subir archivos binarios y de configuración locales:
+
+```
+bin/
+obj/
+.vscode/
+*.user
+*.suo
+*.log
+log.txt
+```
+
+---
+
+¿Querés adaptar este proyecto para usar menú por consola o pruebas automatizadas? Lo podemos extender fácilmente.

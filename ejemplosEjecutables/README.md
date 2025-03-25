@@ -84,6 +84,6 @@ A continuación se incluye una captura de pantalla con los resultados en consola
 
 ### 📸:
 
-> ![Resultados en consola](assets/screenshot/console_output.png)
+> ![Resultados en consola](/assets/screenshot/console_output.png)
 
 ---

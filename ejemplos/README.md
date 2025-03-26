@@ -1,75 +1,139 @@
-# Ejemplos de `lock` en C# (detalle por ejemplo)
+# Ejemplos prácticos y profesionales de `lock` en C#
 
-Este documento explica en profundidad cada uno de los 10 ejemplos de uso de `lock` en C#, incluyendo su propósito, ejecución y por qué `lock` es la mejor opción para ese caso. Todos los ejemplos fueron organizados y adaptados para poder ejecutarse fácilmente en un entorno multihilo.
+Este documento presenta 10 ejemplos realistas y técnicamente justificados del uso de `lock` en C#, todos diseñados con hilos (`Thread`) para ilustrar cómo `lock` previene condiciones de carrera en escenarios concretos de desarrollo profesional.
 
 ---
 
-## 🧪 Ejemplo 1: Contador compartido
+## 🧪 Ejemplo 1: Registro de logs en múltiples hilos
 
 ```csharp
-private static readonly object _lock = new();
-private static int _contador = 0;
+private static readonly object _lockLog = new();
 
-public static void Incrementar()
+public static void EscribirLog(string mensaje)
 {
-    lock (_lock)
+    lock (_lockLog)
     {
-        _contador++;
-    }
-}
-
-public static int GetContador()
-{
-    lock (_lock)
-    {
-        return _contador;
+        File.AppendAllText("log.txt", $"{DateTime.Now}: {mensaje}{Environment.NewLine}");
     }
 }
 ```
 
-🔍 Se incrementa un contador desde múltiples hilos. Se expone el valor final mediante el método `GetContador()`.
+🔍 Cada hilo escribe su mensaje al mismo archivo, evitando corrupción del archivo.
 
 ✅ **¿Por qué `lock`?**  
-Es el enfoque más directo y limpio. `Monitor` sería más verboso sin aportar valor. `lock` es suficiente para proteger una operación tan simple.
+Es rápido, local al proceso y perfecto para sincronizar una sección crítica. Usar `Mutex` sería excesivo (se usa entre procesos) y `Monitor` agrega complejidad innecesaria.
 
+
+
+📊 **Comparación con otros mecanismos:**
+- 🔐 `Monitor`: Equivalente, pero requiere más código (`Enter`/`Exit`). `lock` es preferible para claridad y simplicidad.
+- 🧵 `Mutex`: No necesario salvo sincronización entre procesos (otro ejecutable o servicio).
+- 🔄 `Barrier`: No aplica. `Barrier` sincroniza fases entre hilos, no protege secciones críticas.
+- 📉 `Semaphore(Slim)`: Útil si se desea concurrencia parcial. En estos ejemplos se busca exclusividad total.
 ---
 
-## 🧪 Ejemplo 2: Lista compartida
+## 🧪 Ejemplo 2: Validación de stock antes de venta
 
 ```csharp
-private static readonly object _lockLista = new();
-private static List<string> _mensajes = new();
+private static readonly object _stockLock = new();
+private static int _stock = 5;
 
-public static void AgregarMensaje(string mensaje)
+public static string IntentarCompra(string cliente)
 {
-    lock (_lockLista)
+    lock (_stockLock)
     {
-        _mensajes.Add(mensaje);
-    }
-}
-
-public static List<string> GetMensajes()
-{
-    lock (_lockLista)
-    {
-        return new List<string>(_mensajes);
+        if (_stock <= 0) return $"{cliente} no pudo comprar. Sin stock.";
+        _stock--;
+        return $"{cliente} compró. Stock restante: {_stock}";
     }
 }
 ```
 
-🔍 Agrega mensajes a una lista compartida desde múltiples hilos. Se accede con `GetMensajes()` para mostrar el resultado.
+🔍 Garantiza que dos clientes no compren el mismo stock simultáneamente.
 
 ✅ **¿Por qué `lock`?**  
-A diferencia de `ConcurrentBag`, este patrón permite insertar lógica adicional como validaciones, logs, o restricciones.
+Acceso crítico a un recurso simple. `SemaphoreSlim` sería útil si quisiéramos limitar el acceso concurrente sin lógica condicional. Pero `lock` es ideal para lógica de negocio encapsulada.
 
+
+
+📊 **Comparación con otros mecanismos:**
+- 🔐 `Monitor`: Equivalente, pero requiere más código (`Enter`/`Exit`). `lock` es preferible para claridad y simplicidad.
+- 🧵 `Mutex`: No necesario salvo sincronización entre procesos (otro ejecutable o servicio).
+- 🔄 `Barrier`: No aplica. `Barrier` sincroniza fases entre hilos, no protege secciones críticas.
+- 📉 `Semaphore(Slim)`: Útil si se desea concurrencia parcial. En estos ejemplos se busca exclusividad total.
 ---
 
-## 🧪 Ejemplo 3: Imprimir seguro en consola
+## 🧪 Ejemplo 3: Asignación única de identificadores
+
+```csharp
+private static readonly object _idLock = new();
+private static int _ultimoId = 0;
+
+public static int GenerarId()
+{
+    lock (_idLock)
+    {
+        return ++_ultimoId;
+    }
+}
+```
+
+🔍 Garante unicidad de IDs generados por múltiples hilos.
+
+✅ **¿Por qué `lock`?**  
+Protege un contador compartido. Alternativas como `Interlocked` pueden funcionar, pero `lock` permite incluir más lógica si fuera necesario.
+
+
+
+📊 **Comparación con otros mecanismos:**
+- 🔐 `Monitor`: Equivalente, pero requiere más código (`Enter`/`Exit`). `lock` es preferible para claridad y simplicidad.
+- 🧵 `Mutex`: No necesario salvo sincronización entre procesos (otro ejecutable o servicio).
+- 🔄 `Barrier`: No aplica. `Barrier` sincroniza fases entre hilos, no protege secciones críticas.
+- 📉 `Semaphore(Slim)`: Útil si se desea concurrencia parcial. En estos ejemplos se busca exclusividad total.
+---
+
+## 🧪 Ejemplo 4: Registro de errores capturados
+
+```csharp
+private static readonly object _errorLock = new();
+private static List<string> _errores = new();
+
+public static void EjecutarConCaptura(Action accion)
+{
+    try
+    {
+        accion();
+    }
+    catch (Exception ex)
+    {
+        lock (_errorLock)
+        {
+            _errores.Add(ex.Message);
+        }
+    }
+}
+```
+
+🔍 Permite a múltiples hilos registrar errores sin sobrescribir o perder mensajes.
+
+✅ **¿Por qué `lock`?**  
+Colecciones compartidas deben protegerse. `ConcurrentBag` sería válido, pero no permite personalizar la captura del error.
+
+
+
+📊 **Comparación con otros mecanismos:**
+- 🔐 `Monitor`: Equivalente, pero requiere más código (`Enter`/`Exit`). `lock` es preferible para claridad y simplicidad.
+- 🧵 `Mutex`: No necesario salvo sincronización entre procesos (otro ejecutable o servicio).
+- 🔄 `Barrier`: No aplica. `Barrier` sincroniza fases entre hilos, no protege secciones críticas.
+- 📉 `Semaphore(Slim)`: Útil si se desea concurrencia parcial. En estos ejemplos se busca exclusividad total.
+---
+
+## 🧪 Ejemplo 5: Consola como recurso exclusivo
 
 ```csharp
 private static readonly object _consoleLock = new();
 
-public static void ImprimirSeguro(string mensaje)
+public static void EscribirSeguro(string mensaje)
 {
     lock (_consoleLock)
     {
@@ -78,45 +142,86 @@ public static void ImprimirSeguro(string mensaje)
 }
 ```
 
-🔍 Asegura que los mensajes en consola no se mezclen cuando varios hilos imprimen simultáneamente.
+🔍 Evita que los mensajes de múltiples hilos se mezclen en la consola.
 
 ✅ **¿Por qué `lock`?**  
-Evita mensajes intercalados. `Monitor` o cualquier otra alternativa sería innecesariamente compleja.
+`lock` es directo y eficiente. `Monitor` o `Mutex` solo agregarían complejidad en este caso.
 
+
+
+📊 **Comparación con otros mecanismos:**
+- 🔐 `Monitor`: Equivalente, pero requiere más código (`Enter`/`Exit`). `lock` es preferible para claridad y simplicidad.
+- 🧵 `Mutex`: No necesario salvo sincronización entre procesos (otro ejecutable o servicio).
+- 🔄 `Barrier`: No aplica. `Barrier` sincroniza fases entre hilos, no protege secciones críticas.
+- 📉 `Semaphore(Slim)`: Útil si se desea concurrencia parcial. En estos ejemplos se busca exclusividad total.
 ---
 
-## 🧪 Ejemplo 4: Depósitos y retiros
+## 🧪 Ejemplo 6: Billetera digital con múltiples operaciones
 
 ```csharp
-private static readonly object _lockSaldo = new();
-private static int _saldo = 1000;
+private static readonly object _saldoLock = new();
+private static decimal _saldo = 1000;
 
-public static void Depositar(int monto)
+public static string Retirar(decimal monto)
 {
-    lock (_lockSaldo)
-    {
-        _saldo += monto;
-    }
-}
-
-public static void Retirar(int monto)
-{
-    lock (_lockSaldo)
+    lock (_saldoLock)
     {
         if (_saldo >= monto)
+        {
             _saldo -= monto;
+            return $"Retiro exitoso. Saldo restante: {_saldo}";
+        }
+        return "Fondos insuficientes.";
     }
 }
 ```
 
-🔍 Se protege el acceso a una cuenta simulada con retiros y depósitos desde múltiples hilos.
+🔍 Proceso transaccional requiere leer y escribir atómicamente el saldo.
 
 ✅ **¿Por qué `lock`?**  
-Permite mantener la lógica completa como una transacción segura. `ReaderWriterLockSlim` sería innecesariamente complejo.
+Permite proteger el estado completo de una transacción. `ReaderWriterLockSlim` sería útil si sólo leyéramos, pero aquí hay escritura crítica.
 
+
+
+📊 **Comparación con otros mecanismos:**
+- 🔐 `Monitor`: Equivalente, pero requiere más código (`Enter`/`Exit`). `lock` es preferible para claridad y simplicidad.
+- 🧵 `Mutex`: No necesario salvo sincronización entre procesos (otro ejecutable o servicio).
+- 🔄 `Barrier`: No aplica. `Barrier` sincroniza fases entre hilos, no protege secciones críticas.
+- 📉 `Semaphore(Slim)`: Útil si se desea concurrencia parcial. En estos ejemplos se busca exclusividad total.
 ---
 
-## 🧪 Ejemplo 5: Cola FIFO personalizada
+## 🧪 Ejemplo 7: Cache local con verificación y creación
+
+```csharp
+private static readonly object _cacheLock = new();
+private static Dictionary<string, string> _cache = new();
+
+public static string ObtenerOAgregar(string clave)
+{
+    lock (_cacheLock)
+    {
+        if (!_cache.ContainsKey(clave))
+            _cache[clave] = $"Valor generado para {clave}";
+        return _cache[clave];
+    }
+}
+```
+
+🔍 Solo un hilo debe inicializar una entrada en caché.
+
+✅ **¿Por qué `lock`?**  
+`ConcurrentDictionary` existe, pero no permite fácilmente lógica condicional personalizada como en este patrón.
+
+
+
+📊 **Comparación con otros mecanismos:**
+- 🔐 `Monitor`: Equivalente, pero requiere más código (`Enter`/`Exit`). `lock` es preferible para claridad y simplicidad.
+- 🧵 `Mutex`: No necesario salvo sincronización entre procesos (otro ejecutable o servicio).
+- 🔄 `Barrier`: No aplica. `Barrier` sincroniza fases entre hilos, no protege secciones críticas.
+- 📉 `Semaphore(Slim)`: Útil si se desea concurrencia parcial. En estos ejemplos se busca exclusividad total.
+---
+
+## 🧪 Ejemplo 8: Cola FIFO con validación
 
 ```csharp
 private static readonly object _colaLock = new();
@@ -134,176 +239,202 @@ public static string Desencolar()
 {
     lock (_colaLock)
     {
-        if (_cola.Count == 0)
-            throw new InvalidOperationException("La cola está vacía.");
-        return _cola.Dequeue();
+        return _cola.Count > 0 ? _cola.Dequeue() : "Cola vacía";
     }
 }
 ```
 
-🔍 Se simula una cola FIFO donde se puede controlar validaciones, errores y estructura personalizada.
+🔍 Dos métodos que acceden y modifican la cola deben estar sincronizados.
 
 ✅ **¿Por qué `lock`?**  
-`ConcurrentQueue` no permite lanzar excepciones o imponer reglas de negocio. `lock` da más flexibilidad.
+Permite validar, controlar errores y mantener lógica clara. `ConcurrentQueue` no da control sobre errores o lógica personalizada.
+
+
+
+📊 **Comparación con otros mecanismos:**
+- 🔐 `Monitor`: Equivalente, pero requiere más código (`Enter`/`Exit`). `lock` es preferible para claridad y simplicidad.
+- 🧵 `Mutex`: No necesario salvo sincronización entre procesos (otro ejecutable o servicio).
+- 🔄 `Barrier`: No aplica. `Barrier` sincroniza fases entre hilos, no protege secciones críticas.
+- 📉 `Semaphore(Slim)`: Útil si se desea concurrencia parcial. En estos ejemplos se busca exclusividad total.
+---
+
+## 🧪 Ejemplo 9: Lista de usuarios conectados
+
+```csharp
+private static readonly object _usuariosLock = new();
+private static List<string> _usuarios = new();
+
+public static void Conectar(string usuario)
+{
+    lock (_usuariosLock)
+    {
+        if (!_usuarios.Contains(usuario))
+            _usuarios.Add(usuario);
+    }
+}
+```
+
+🔍 Evita conexiones duplicadas en un servidor multihilo.
+
+✅ **¿Por qué `lock`?**  
+Permite lógica condicional que no se puede expresar con `ConcurrentBag` o `ConcurrentQueue`.
+
+
+
+📊 **Comparación con otros mecanismos:**
+- 🔐 `Monitor`: Equivalente, pero requiere más código (`Enter`/`Exit`). `lock` es preferible para claridad y simplicidad.
+- 🧵 `Mutex`: No necesario salvo sincronización entre procesos (otro ejecutable o servicio).
+- 🔄 `Barrier`: No aplica. `Barrier` sincroniza fases entre hilos, no protege secciones críticas.
+- 📉 `Semaphore(Slim)`: Útil si se desea concurrencia parcial. En estos ejemplos se busca exclusividad total.
+---
+
+## 🧪 Ejemplo 10: Control de acceso por recurso compartido
+
+```csharp
+private static readonly object _recursoLock = new();
+
+public static void Acceder(string nombre)
+{
+    lock (_recursoLock)
+    {
+        Console.WriteLine($"{nombre} accediendo a recurso...");
+        Thread.Sleep(500);
+        Console.WriteLine($"{nombre} salió del recurso.");
+    }
+}
+```
+
+🔍 Simula el uso exclusivo de un recurso costoso (como una base de datos o impresora).
+
+✅ **¿Por qué `lock`?**  
+`lock` asegura exclusión mutua con mínima sobrecarga. `Semaphore` o `Barrier` no aportan beneficios aquí, salvo que se quiera concurrencia parcial.
+
+
+
+📊 **Comparación con otros mecanismos:**
+- 🔐 `Monitor`: Equivalente, pero requiere más código (`Enter`/`Exit`). `lock` es preferible para claridad y simplicidad.
+- 🧵 `Mutex`: No necesario salvo sincronización entre procesos (otro ejecutable o servicio).
+- 🔄 `Barrier`: No aplica. `Barrier` sincroniza fases entre hilos, no protege secciones críticas.
+- 📉 `Semaphore(Slim)`: Útil si se desea concurrencia parcial. En estos ejemplos se busca exclusividad total.
+---
+
+# Casos especiales de `lock` en C#: Anidados y Deadlocks
+
+1. Cómo implementar correctamente `lock` anidados sin riesgo.
+2. Cómo se puede producir un **deadlock real** y cómo prevenirlo.
 
 ---
 
-## 🧪 Ejemplo 6: Locks anidados
+## 🔁 Caso 1: Locks anidados bien implementados
 
 ```csharp
 private static readonly object _lockA = new();
 private static readonly object _lockB = new();
 
-public static void Transferir()
+public static void TransferenciaSegura(string origen, string destino)
 {
+    // Siempre adquirir locks en el mismo orden
     lock (_lockA)
     {
         lock (_lockB)
         {
-            // lógica de transferencia
+            Console.WriteLine($"Transfiriendo de {origen} a {destino}");
         }
     }
 }
 ```
 
-🔍 Protege dos recursos simultáneamente, útil para operaciones como transferencias entre cuentas.
+✅ **¿Por qué es seguro?**  
+Todos los hilos que necesiten ambos recursos los adquieren en el mismo orden (`_lockA` → `_lockB`). Esto evita bloqueos circulares.
 
-✅ **¿Por qué `lock`?**  
-Es reentrante, seguro y claro si se respeta el orden de adquisición. Alternativas como `Mutex` son más costosas.
+📊 **Comparación**:
+- 🔐 `lock`: perfecto para operaciones críticas entre recursos acoplados.
+- 🧵 `Mutex`: más costoso y generalmente para sincronización entre procesos.
+- 🔄 `Monitor`: requiere más código pero el mismo principio.
 
 ---
 
-## 🧪 Ejemplo 7: Contador por usuario
+## 🔁 Caso 2: Deadlock por orden de adquisición inverso
 
 ```csharp
-private static readonly object _lockUsuarios = new();
-private static Dictionary<string, int> _contadores = new();
+private static readonly object _lockA = new();
+private static readonly object _lockB = new();
 
-public static void IncrementarUsuario(string usuario)
+public static void Tarea1()
 {
-    lock (_lockUsuarios)
+    lock (_lockA)
     {
-        if (!_contadores.ContainsKey(usuario))
-            _contadores[usuario] = 0;
+        Thread.Sleep(100); // Simula trabajo
+        lock (_lockB)
+        {
+            Console.WriteLine("Tarea1 terminó");
+        }
+    }
+}
 
-        _contadores[usuario]++;
+public static void Tarea2()
+{
+    lock (_lockB)
+    {
+        Thread.Sleep(100);
+        lock (_lockA)
+        {
+            Console.WriteLine("Tarea2 terminó");
+        }
     }
 }
 ```
 
-🔍 Cuenta ocurrencias por usuario de forma concurrente.
+🔍 **¿Qué ocurre?**  
+- `Tarea1` bloquea `_lockA` y espera por `_lockB`.
+- `Tarea2` bloquea `_lockB` y espera por `_lockA`.
+Ninguno avanza: **deadlock**.
 
-✅ **¿Por qué `lock`?**  
-`ConcurrentDictionary` no permite lógica condicional o inicialización personalizada tan claramente.
+❌ **Consecuencias:**  
+El sistema queda congelado. Los hilos no pueden terminar.
 
----
-
-## 🧪 Ejemplo 8: Escritura en archivo
-
-```csharp
-private static readonly object _fileLock = new();
-
-public static void GuardarLog(string texto)
-{
-    lock (_fileLock)
-    {
-        File.AppendAllText("log.txt", texto + Environment.NewLine);
-    }
-}
-```
-
-🔍 Protege el acceso concurrente a un archivo desde múltiples hilos.
-
-✅ **¿Por qué `lock`?**  
-Más simple que un `Mutex`, que solo sería necesario para sincronizar entre procesos. `lock` basta si estás en el mismo proceso.
+🛡 **¿Cómo prevenirlo?**
+- Siempre adquirir locks en el **mismo orden**.
+- O usar un mecanismo como `Monitor.TryEnter` con timeout para evitar bloqueos indefinidos.
 
 ---
 
-## 🧪 Ejemplo 9: Registro de errores
+## 🛡 Caso 3: Evitar deadlock con `Monitor.TryEnter`
 
 ```csharp
-private static readonly object _errorLock = new();
-private static List<string> _errores = new();
+private static readonly object _lockA = new();
+private static readonly object _lockB = new();
 
-public static void Procesar(Action tarea)
+public static void TareaEvitaDeadlock()
 {
+    bool tengoA = false, tengoB = false;
+
     try
     {
-        tarea();
-    }
-    catch (Exception ex)
-    {
-        lock (_errorLock)
+        tengoA = Monitor.TryEnter(_lockA, 500);
+        tengoB = Monitor.TryEnter(_lockB, 500);
+
+        if (tengoA && tengoB)
         {
-            _errores.Add(ex.Message);
-        }
-    }
-}
-```
-
-🔍 Captura y almacena mensajes de error desde cualquier hilo que falle.
-
-✅ **¿Por qué `lock`?**  
-Es la opción más clara para proteger acceso concurrente a listas. Otros mecanismos serían innecesarios para este caso puntual.
-
----
-
-## 🧪 Ejemplo 10: Control de stock limitado
-
-```csharp
-private static readonly object _stockLock = new();
-private static int _stock = 5;
-
-public static bool IntentarComprar(string usuario)
-{
-    lock (_stockLock)
-    {
-        if (_stock > 0)
-        {
-            _stock--;
-            Console.WriteLine($"{usuario} compró. Stock restante: {_stock}");
-            return true;
+            Console.WriteLine("Operación segura completada.");
         }
         else
         {
-            Console.WriteLine($"{usuario} no pudo comprar. Sin stock.");
-            return false;
+            Console.WriteLine("No se pudo obtener los locks, evitando deadlock.");
         }
+    }
+    finally
+    {
+        if (tengoA) Monitor.Exit(_lockA);
+        if (tengoB) Monitor.Exit(_lockB);
     }
 }
 ```
 
-🔍 Simula una venta concurrente de productos limitados.
+✅ **¿Por qué es seguro?**  
+Al usar `TryEnter` con timeout, se evita quedar esperando indefinidamente si otro hilo ya tiene el lock.
 
-✅ **¿Por qué `lock`?**  
-Es un patrón clásico. `SemaphoreSlim` podría usarse si fuera necesario limitar acceso por diseño, pero `lock` es más adecuado cuando hay lógica crítica que depende de condiciones internas (como stock > 0).
-
----
-
-## 🚀 ¿Cómo ejecutar este proyecto?
-
-1. Asegurate de tener [.NET 9 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/9.0) instalado.
-2. Abrí la carpeta del proyecto en Visual Studio Code.
-3. En terminal, corré:
-
-```bash
-dotnet run
-```
-
----
-
-## ✅ Recomendación de `.gitignore`
-
-Incluí un archivo `.gitignore` para evitar subir archivos binarios y de configuración locales:
-
-```
-bin/
-obj/
-.vscode/
-*.user
-*.suo
-*.log
-log.txt
-```
+📌 **Ventaja sobre `lock`:**  
+Control explícito del tiempo de espera. Útil cuando el sistema debe continuar funcionando aún si no puede ejecutar la operación crítica.
 
 ---

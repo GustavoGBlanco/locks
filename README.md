@@ -1,7 +1,7 @@
-# Módulo 1: `lock` y locks anidados en C#
+# Módulo 1: [`lock`](https://learn.microsoft.com/es-es/dotnet/csharp/language-reference/statements/lock) y locks anidados en C#
 
-## 🔐 ¿Qué es `lock`?
-`lock` se usa para garantizar que **una sola hebra de ejecución (hilo)** acceda a una porción de código crítica a la vez. Previene **condiciones de carrera** cuando múltiples hilos intentan modificar recursos compartidos.
+## 🔐 ¿Qué es [`lock`](https://learn.microsoft.com/es-es/dotnet/csharp/language-reference/statements/lock)?
+[`lock`](https://learn.microsoft.com/es-es/dotnet/csharp/language-reference/statements/lock) se usa para garantizar que **una sola hebra de ejecución (hilo)** acceda a una porción de código crítica a la vez. Previene **condiciones de carrera** cuando múltiples hilos intentan modificar recursos compartidos.
 
 ```csharp
 lock (obj) {
@@ -9,13 +9,13 @@ lock (obj) {
 }
 ```
 
-Internamente, `lock` usa `Monitor.Enter()` y `Monitor.Exit()`.
+Internamente, [`lock`](https://learn.microsoft.com/es-es/dotnet/csharp/language-reference/statements/lock) usa `Monitor.Enter()` y `Monitor.Exit()`.
 
 ---
 
 ## 🏠 Escenario práctico: Gestor de inventario
 
-Creamos una clase `InventoryManager` que maneja el stock de productos. Varios hilos pueden intentar vender o reponer productos al mismo tiempo. Usamos `lock` para proteger los datos compartidos.
+Creamos una clase `InventoryManager` que maneja el stock de productos. Varios hilos pueden intentar vender o reponer productos al mismo tiempo. Usamos [`lock`](https://learn.microsoft.com/es-es/dotnet/csharp/language-reference/statements/lock) para proteger los datos compartidos.
 
 ### Archivos
 
@@ -114,9 +114,9 @@ class Program
 
 ---
 
-## 🤔 ¿Por qué usar `lock` y no `Monitor` directamente?
+## 🤔 ¿Por qué usar [`lock`](https://learn.microsoft.com/es-es/dotnet/csharp/language-reference/statements/lock) y no `Monitor` directamente?
 
-### ✅ 1. `lock` es una abstracción segura y limpia
+### ✅ 1. [`lock`](https://learn.microsoft.com/es-es/dotnet/csharp/language-reference/statements/lock) es una abstracción segura y limpia
 El compilador transforma:
 ```csharp
 lock (obj) {
@@ -137,13 +137,13 @@ finally {
 Evita errores como olvidarse del `Monitor.Exit` si ocurre una excepción.
 
 ### ✅ 2. Código más limpio y legible
-`lock` reduce ruido visual y hace que el código sea más intuitivo.
+[`lock`](https://learn.microsoft.com/es-es/dotnet/csharp/language-reference/statements/lock) reduce ruido visual y hace que el código sea más intuitivo.
 
 ### ✅ 3. Ideal para la mayoría de los casos
-Usá `Monitor` solo si necesitás `Wait()` y `Pulse()`, que `lock` no soporta directamente.
+Usá `Monitor` solo si necesitás `Wait()` y `Pulse()`, que [`lock`](https://learn.microsoft.com/es-es/dotnet/csharp/language-reference/statements/lock) no soporta directamente.
 
 ### Analogía:
-> `lock` es como un microondas con botones predefinidos.
+> [`lock`](https://learn.microsoft.com/es-es/dotnet/csharp/language-reference/statements/lock) es como un microondas con botones predefinidos.
 > `Monitor` es como abrir el panel y ajustar voltajes manualmente.
 
 ---
@@ -151,7 +151,7 @@ Usá `Monitor` solo si necesitás `Wait()` y `Pulse()`, que `lock` no soporta di
 ## 🧠 Locks anidados
 
 ### ¿Qué es un lock anidado?
-Es cuando un hilo entra en un `lock` y dentro vuelve a usar `lock`, incluso sobre el mismo objeto:
+Es cuando un hilo entra en un [`lock`](https://learn.microsoft.com/es-es/dotnet/csharp/language-reference/statements/lock) y dentro vuelve a usar [`lock`](https://learn.microsoft.com/es-es/dotnet/csharp/language-reference/statements/lock), incluso sobre el mismo objeto:
 
 ```csharp
 lock (obj)
@@ -163,7 +163,7 @@ lock (obj)
     }
 }
 ```
-Esto **no genera deadlock si es el mismo hilo**. `lock` es reentrante.
+Esto **no genera deadlock si es el mismo hilo**. [`lock`](https://learn.microsoft.com/es-es/dotnet/csharp/language-reference/statements/lock) es reentrante.
 
 ### ⚠️ Ejemplo de mal uso (potencial deadlock):
 ```csharp
@@ -188,12 +188,12 @@ lock (_lock2)
 
 ---
 
-## 🧼 Buenas prácticas con `lock`
+## 🧼 Buenas prácticas con [`lock`](https://learn.microsoft.com/es-es/dotnet/csharp/language-reference/statements/lock)
 
 | Regla | Motivo |
 |-------|--------|
 | 🔒 Usá objetos privados como candado | Evitá acceso externo o colisiones |
-| 🌟 Mantené el bloque `lock` corto | Minimiza bloqueos innecesarios |
+| 🌟 Mantené el bloque [`lock`](https://learn.microsoft.com/es-es/dotnet/csharp/language-reference/statements/lock) corto | Minimiza bloqueos innecesarios |
 | 🔄 Evitá locks anidados entre objetos distintos | Previene deadlocks |
 | 🤔 Siempre probá concurrencia con múltiples hilos | Verificá consistencia |
 

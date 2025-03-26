@@ -9,7 +9,7 @@ lock (obj) {
 }
 ```
 
-Internamente, [`lock`](https://learn.microsoft.com/es-es/dotnet/csharp/language-reference/statements/lock) usa `Monitor.Enter()` y `Monitor.Exit()`.
+Internamente, [`lock`](https://learn.microsoft.com/es-es/dotnet/csharp/language-reference/statements/lock) usa [`Monitor.Enter()`](https://learn.microsoft.com/es-es/dotnet/api/system.threading.monitor.enter?view=net-8.0) y [`Monitor.Exit()`](https://learn.microsoft.com/en-us/dotnet/api/system.threading.monitor.exit?view=net-9.0).
 
 ---
 
@@ -114,7 +114,7 @@ class Program
 
 ---
 
-## 🤔 ¿Por qué usar [`lock`](https://learn.microsoft.com/es-es/dotnet/csharp/language-reference/statements/lock) y no `Monitor` directamente?
+## 🤔 ¿Por qué usar [`lock`](https://learn.microsoft.com/es-es/dotnet/csharp/language-reference/statements/lock) y no [`Monitor`](https://learn.microsoft.com/es-es/dotnet/api/system.threading.monitor?view=net-8.0) directamente?
 
 ### ✅ 1. [`lock`](https://learn.microsoft.com/es-es/dotnet/csharp/language-reference/statements/lock) es una abstracción segura y limpia
 El compilador transforma:
@@ -134,17 +134,17 @@ finally {
 }
 ```
 
-Evita errores como olvidarse del `Monitor.Exit` si ocurre una excepción.
+Evita errores como olvidarse del `Monitor.Exit()`](https://learn.microsoft.com/en-us/dotnet/api/system.threading.monitor.exit?view=net-9.0) si ocurre una excepción.
 
 ### ✅ 2. Código más limpio y legible
 [`lock`](https://learn.microsoft.com/es-es/dotnet/csharp/language-reference/statements/lock) reduce ruido visual y hace que el código sea más intuitivo.
 
 ### ✅ 3. Ideal para la mayoría de los casos
-Usá `Monitor` solo si necesitás `Wait()` y `Pulse()`, que [`lock`](https://learn.microsoft.com/es-es/dotnet/csharp/language-reference/statements/lock) no soporta directamente.
+Usá [`Monitor`](https://learn.microsoft.com/es-es/dotnet/api/system.threading.monitor?view=net-8.0) solo si necesitás [`Wait()`](https://learn.microsoft.com/es-es/dotnet/api/system.threading.monitor.wait?view=net-8.0#system-threading-monitor-wait(system-object)) y [`Pulse()`](https://learn.microsoft.com/es-es/dotnet/api/system.threading.monitor.pulse?view=net-8.0), que [`lock`](https://learn.microsoft.com/es-es/dotnet/csharp/language-reference/statements/lock) no soporta directamente.
 
 ### Analogía:
 > [`lock`](https://learn.microsoft.com/es-es/dotnet/csharp/language-reference/statements/lock) es como un microondas con botones predefinidos.
-> `Monitor` es como abrir el panel y ajustar voltajes manualmente.
+> [`Monitor`](https://learn.microsoft.com/es-es/dotnet/api/system.threading.monitor?view=net-8.0) es como abrir el panel y ajustar voltajes manualmente.
 
 ---
 
@@ -199,5 +199,5 @@ lock (_lock2)
 
 ---
 
-✅ Este fue el Módulo 1. El siguiente será sobre `Monitor`, `Wait()` y `Pulse()` con un escenario productor-consumidor realista.
+✅ Este fue el Módulo 1. El siguiente será sobre [`Monitor`](https://learn.microsoft.com/es-es/dotnet/api/system.threading.monitor?view=net-8.0), [`Wait()`](https://learn.microsoft.com/es-es/dotnet/api/system.threading.monitor.wait?view=net-8.0#system-threading-monitor-wait(system-object)) y [`Pulse()`](https://learn.microsoft.com/es-es/dotnet/api/system.threading.monitor.pulse?view=net-8.0) con un escenario productor-consumidor realista.
 

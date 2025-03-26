@@ -198,6 +198,3 @@ lock (_lock2)
 | 🤔 Siempre probá concurrencia con múltiples hilos | Verificá consistencia |
 
 ---
-
-✅ Este fue el Módulo 1. El siguiente será sobre [`Monitor`](https://learn.microsoft.com/es-es/dotnet/api/system.threading.monitor?view=net-8.0), [`Wait()`](https://learn.microsoft.com/es-es/dotnet/api/system.threading.monitor.wait?view=net-8.0#system-threading-monitor-wait(system-object)) y [`Pulse()`](https://learn.microsoft.com/es-es/dotnet/api/system.threading.monitor.pulse?view=net-8.0) con un escenario productor-consumidor realista.
-

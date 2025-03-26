@@ -1,3 +1,4 @@
+
 using System;
 using System.Threading;
 
@@ -5,102 +6,84 @@ class LockExamplesApp
 {
     static void Main()
     {
-        Console.WriteLine("Ejemplos de lock en C# ejecutándose...");
+        Console.WriteLine("🧪 Ejecutando ejemplos de `lock`");
 
-        // ----------------------
-        // Ejemplo 1: Contador compartido
-        Console.WriteLine("----------Ejemplo1----------");
-        for (int i = 0; i < 1000; i++)
-            new Thread(LockExamples.Incrementar).Start();
-        Thread.Sleep(500);
-        Console.WriteLine("Contador final: " + LockExamples.GetContador());
+        Console.WriteLine("----------Ejemplo 1: Escritura de logs----------");
+        new Thread(() => Logger.EscribirLog("Desde Hilo 1")).Start();
+        new Thread(() => Logger.EscribirLog("Desde Hilo 2")).Start();
+        Thread.Sleep(300);
         Console.WriteLine();
 
-        // ----------------------
-        // Ejemplo 2: Lista compartida
-        Console.WriteLine("----------Ejemplo2----------");
-        for (int i = 0; i < 5; i++)
-            new Thread(() => LockExamples.AgregarMensaje($"Mensaje {i}")).Start();
-        Thread.Sleep(500);
-        Console.WriteLine("Mensajes en la lista:");
-        foreach (var mensaje in LockExamples.GetMensajes())
+        Console.WriteLine("----------Ejemplo 2: Validación de stock----------");
+        for (int i = 1; i <= 7; i++)
         {
-            Console.WriteLine(" - " + mensaje);
+            string cliente = $"Cliente{i}";
+            new Thread(() => Console.WriteLine(Inventario.IntentarCompra(cliente))).Start();
         }
-        Console.WriteLine();
-
-        // ----------------------
-        // Ejemplo 3: Imprimir en consola
-        Console.WriteLine("----------Ejemplo3----------");
-        for (int i = 0; i < 3; i++)
-            new Thread(() => LockExamples.ImprimirSeguro($"Impresión segura {i}")).Start();
         Thread.Sleep(500);
         Console.WriteLine();
 
-        // ----------------------
-        // Ejemplo 4: Depósitos y retiros
-        Console.WriteLine("----------Ejemplo4----------");
-        new Thread(() => LockExamples.Depositar(500)).Start();
-        new Thread(() => LockExamples.Retirar(300)).Start();
+        Console.WriteLine("----------Ejemplo 3: Generación de ID----------");
+        new Thread(() => Console.WriteLine($"Nuevo ID: {IdGenerator.GenerarId()}")).Start();
+        Thread.Sleep(300);
+        Console.WriteLine();
+
+        Console.WriteLine("----------Ejemplo 4: Registro de errores----------");
+        ErrorHandler.EjecutarConCaptura(() => throw new Exception("Simulación de error"));
+        Console.WriteLine("Error registrado.");
+        Console.WriteLine();
+
+        Console.WriteLine("----------Ejemplo 5: Escritura segura en consola----------");
+        new Thread(() => Consola.EscribirSeguro("Mensaje A")).Start();
+        new Thread(() => Consola.EscribirSeguro("Mensaje B")).Start();
+        Thread.Sleep(300);
+        Console.WriteLine();
+
+        Console.WriteLine("----------Ejemplo 6: Retiro de billetera----------");
+        new Thread(() => Console.WriteLine(Billetera.Retirar(100))).Start();
+        Thread.Sleep(300);
+        Console.WriteLine();
+
+        Console.WriteLine("----------Ejemplo 7: Cache de valores----------");
+        Console.WriteLine(Cache.ObtenerOAgregar("cliente:123"));
+        Console.WriteLine();
+
+        Console.WriteLine("----------Ejemplo 8: Cola segura----------");
+        ColaSegura.Encolar("Tarea 1");
+        Console.WriteLine("Desencolado: " + ColaSegura.Desencolar());
+        Console.WriteLine();
+
+        Console.WriteLine("----------Ejemplo 9: Lista de usuarios conectados----------");
+        new Thread(() => Sesiones.Conectar("usuario1")).Start();
+        new Thread(() => Sesiones.Conectar("usuario1")).Start();
+        Thread.Sleep(300);
+        Console.WriteLine("Usuarios conectados registrados.");
+        Console.WriteLine();
+
+        Console.WriteLine("----------Ejemplo 10: Acceso exclusivo a recurso----------");
+        new Thread(() => RecursoCompartido.Acceder("Proceso A")).Start();
+        new Thread(() => RecursoCompartido.Acceder("Proceso B")).Start();
+        Thread.Sleep(1000);
+        Console.WriteLine();
+
+        Console.WriteLine("🔁 Casos especiales de lock");
+
+        Console.WriteLine("----------Caso 1: Locks anidados bien implementados----------");
+        new Thread(() => LocksAnidados.TransferenciaSegura("A", "B")).Start();
+        Thread.Sleep(300);
+        Console.WriteLine();
+
+        Console.WriteLine("----------Caso 2: Deadlock real por orden invertido----------");
+        new Thread(DeadlockEjemplo.Tarea1).Start();
+        new Thread(DeadlockEjemplo.Tarea2).Start();
+        Thread.Sleep(1000);
+        Console.WriteLine();
+
+        Console.WriteLine("----------Caso 3: Prevención de deadlock con Monitor.TryEnter----------");
+        new Thread(DeadlockSafe.TareaEvitaDeadlock).Start();
         Thread.Sleep(500);
-        Console.WriteLine("Operaciones de saldo realizadas (no se imprime saldo actual)");
         Console.WriteLine();
 
-        // ----------------------
-        // Ejemplo 5: Cola FIFO personalizada
-        Console.WriteLine("----------Ejemplo5----------");
-        LockExamples.Encolar("Dato A");
-        LockExamples.Encolar("Dato B");
-        try
-        {
-            Console.WriteLine("Dato desencolado: " + LockExamples.Desencolar());
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine("Error al desencolar: " + ex.Message);
-        }
-        Console.WriteLine();
-
-        // ----------------------
-        // Ejemplo 6: Locks anidados
-        Console.WriteLine("----------Ejemplo6----------");
-        LockExamples.Transferir();
-        Console.WriteLine("Transferencia entre recursos realizada.");
-        Console.WriteLine();
-
-        // ----------------------
-        // Ejemplo 7: Contador por usuario
-        Console.WriteLine("----------Ejemplo7----------");
-        new Thread(() => LockExamples.IncrementarUsuario("Juan")).Start();
-        new Thread(() => LockExamples.IncrementarUsuario("Ana")).Start();
-        Thread.Sleep(500);
-        Console.WriteLine("Contadores por usuario incrementados (no se imprime diccionario).");
-        Console.WriteLine();
-
-        // ----------------------
-        // Ejemplo 8: Escritura en archivo
-        Console.WriteLine("----------Ejemplo8----------");
-        LockExamples.GuardarLog("Log generado desde Main");
-        Console.WriteLine("Log guardado en archivo 'log.txt'.");
-        Console.WriteLine();
-
-        // ----------------------
-        // Ejemplo 9: Registro de errores
-        Console.WriteLine("----------Ejemplo9----------");
-        LockExamples.Procesar(() => throw new Exception("Error simulado en Main"));
-        Console.WriteLine("Error capturado y registrado.");
-        Console.WriteLine();
-
-        // ----------------------
-        // Ejemplo 10: Control de stock con múltiples hilos
-        Console.WriteLine("----------Ejemplo10----------");
-        for (int i = 1; i <= 10; i++)
-        {
-            string usuario = $"Usuario{i}";
-            new Thread(() => StockDemo.IntentarComprar(usuario)).Start();
-        }
-
-        Thread.Sleep(1000); // Esperar que todos terminen
-        Console.WriteLine("Fin de los ejemplos.");
+        Console.WriteLine("✅ Fin de los ejemplos.");
     }
 }

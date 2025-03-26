@@ -4,81 +4,120 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 
-public static class LockExamples
+public static class Logger
 {
-    // Ejemplo 1: Contador compartido
-    private static readonly object _lock = new();
-    private static int _contador = 0;
+    private static readonly object _lockLog = new();
 
-    public static void Incrementar()
+    public static void EscribirLog(string mensaje)
     {
-        lock (_lock)
+        lock (_lockLog)
         {
-            _contador++;
+            File.AppendAllText("log.txt", $"{DateTime.Now}: {mensaje}{Environment.NewLine}");
         }
     }
+}
 
-    public static int GetContador()
+public static class Inventario
+{
+    private static readonly object _stockLock = new();
+    private static int _stock = 5;
+
+    public static string IntentarCompra(string cliente)
     {
-        lock (_lock)
+        lock (_stockLock)
         {
-            return _contador;
+            if (_stock <= 0) return $"{cliente} no pudo comprar. Sin stock.";
+            _stock--;
+            return $"{cliente} compró. Stock restante: {_stock}";
         }
     }
+}
 
-    // Ejemplo 2: Lista compartida
-    private static readonly object _lockLista = new();
-    private static List<string> _mensajes = new();
+public static class IdGenerator
+{
+    private static readonly object _idLock = new();
+    private static int _ultimoId = 0;
 
-    public static void AgregarMensaje(string mensaje)
+    public static int GenerarId()
     {
-        lock (_lockLista)
+        lock (_idLock)
         {
-            _mensajes.Add(mensaje);
+            return ++_ultimoId;
         }
     }
+}
 
-    public static List<string> GetMensajes()
+public static class ErrorHandler
+{
+    private static readonly object _errorLock = new();
+    private static List<string> _errores = new();
+
+    public static void EjecutarConCaptura(Action accion)
     {
-        lock (_lockLista)
+        try
         {
-            return new List<string>(_mensajes);
+            accion();
+        }
+        catch (Exception ex)
+        {
+            lock (_errorLock)
+            {
+                _errores.Add(ex.Message);
+            }
         }
     }
+}
 
-    // Ejemplo 3: Imprimir en consola
+public static class Consola
+{
     private static readonly object _consoleLock = new();
 
-    public static void ImprimirSeguro(string mensaje)
+    public static void EscribirSeguro(string mensaje)
     {
         lock (_consoleLock)
         {
             Console.WriteLine(mensaje);
         }
     }
+}
 
-    // Ejemplo 4: Depósitos y retiros
-    private static readonly object _lockSaldo = new();
-    private static int _saldo = 1000;
+public static class Billetera
+{
+    private static readonly object _saldoLock = new();
+    private static decimal _saldo = 1000;
 
-    public static void Depositar(int monto)
+    public static string Retirar(decimal monto)
     {
-        lock (_lockSaldo)
-        {
-            _saldo += monto;
-        }
-    }
-
-    public static void Retirar(int monto)
-    {
-        lock (_lockSaldo)
+        lock (_saldoLock)
         {
             if (_saldo >= monto)
+            {
                 _saldo -= monto;
+                return $"Retiro exitoso. Saldo restante: {_saldo}";
+            }
+            return "Fondos insuficientes.";
         }
     }
+}
 
-    // Ejemplo 5: Cola FIFO personalizada
+public static class Cache
+{
+    private static readonly object _cacheLock = new();
+    private static Dictionary<string, string> _cache = new();
+
+    public static string ObtenerOAgregar(string clave)
+    {
+        lock (_cacheLock)
+        {
+            if (!_cache.ContainsKey(clave))
+                _cache[clave] = $"Valor generado para {clave}";
+            return _cache[clave];
+        }
+    }
+}
+
+public static class ColaSegura
+{
     private static readonly object _colaLock = new();
     private static Queue<string> _cola = new();
 
@@ -94,94 +133,116 @@ public static class LockExamples
     {
         lock (_colaLock)
         {
-            if (_cola.Count == 0)
-                throw new InvalidOperationException("La cola está vacía.");
-            return _cola.Dequeue();
+            return _cola.Count > 0 ? _cola.Dequeue() : "Cola vacía";
         }
     }
+}
 
-    // Ejemplo 6: Locks anidados
+public static class Sesiones
+{
+    private static readonly object _usuariosLock = new();
+    private static List<string> _usuarios = new();
+
+    public static void Conectar(string usuario)
+    {
+        lock (_usuariosLock)
+        {
+            if (!_usuarios.Contains(usuario))
+                _usuarios.Add(usuario);
+        }
+    }
+}
+
+public static class RecursoCompartido
+{
+    private static readonly object _recursoLock = new();
+
+    public static void Acceder(string nombre)
+    {
+        lock (_recursoLock)
+        {
+            Console.WriteLine($"{nombre} accediendo a recurso...");
+            Thread.Sleep(500);
+            Console.WriteLine($"{nombre} salió del recurso.");
+        }
+    }
+}
+
+// Casos especiales
+public static class LocksAnidados
+{
     private static readonly object _lockA = new();
     private static readonly object _lockB = new();
 
-    public static void Transferir()
+    public static void TransferenciaSegura(string origen, string destino)
     {
         lock (_lockA)
         {
             lock (_lockB)
             {
-                // Transferencia entre recursos
-            }
-        }
-    }
-
-    // Ejemplo 7: Contador por usuario
-    private static readonly object _lockUsuarios = new();
-    private static Dictionary<string, int> _contadores = new();
-
-    public static void IncrementarUsuario(string usuario)
-    {
-        lock (_lockUsuarios)
-        {
-            if (!_contadores.ContainsKey(usuario))
-                _contadores[usuario] = 0;
-
-            _contadores[usuario]++;
-        }
-    }
-
-    // Ejemplo 8: Escritura en archivo
-    private static readonly object _fileLock = new();
-
-    public static void GuardarLog(string texto)
-    {
-        lock (_fileLock)
-        {
-            File.AppendAllText("log.txt", texto + Environment.NewLine);
-        }
-    }
-
-    // Ejemplo 9: Registro de errores
-    private static readonly object _errorLock = new();
-    private static List<string> _errores = new();
-
-    public static void Procesar(Action tarea)
-    {
-        try
-        {
-            tarea();
-        }
-        catch (Exception ex)
-        {
-            lock (_errorLock)
-            {
-                _errores.Add(ex.Message);
+                Console.WriteLine($"Transfiriendo de {origen} a {destino}");
             }
         }
     }
 }
 
-// Ejemplo 10: Clase separada para stock limitado
-public static class StockDemo
+public static class DeadlockEjemplo
 {
-    private static readonly object _stockLock = new();
-    private static int _stock = 5;
+    private static readonly object _lockA = new();
+    private static readonly object _lockB = new();
 
-    public static bool IntentarComprar(string usuario)
+    public static void Tarea1()
     {
-        lock (_stockLock)
+        lock (_lockA)
         {
-            if (_stock > 0)
+            Thread.Sleep(100);
+            lock (_lockB)
             {
-                _stock--;
-                Console.WriteLine($"[32m{usuario} compró. Stock restante: {_stock}[0m");
-                return true;
+                Console.WriteLine("Tarea1 terminó");
+            }
+        }
+    }
+
+    public static void Tarea2()
+    {
+        lock (_lockB)
+        {
+            Thread.Sleep(100);
+            lock (_lockA)
+            {
+                Console.WriteLine("Tarea2 terminó");
+            }
+        }
+    }
+}
+
+public static class DeadlockSafe
+{
+    private static readonly object _lockA = new();
+    private static readonly object _lockB = new();
+
+    public static void TareaEvitaDeadlock()
+    {
+        bool tengoA = false, tengoB = false;
+
+        try
+        {
+            tengoA = Monitor.TryEnter(_lockA, 500);
+            tengoB = Monitor.TryEnter(_lockB, 500);
+
+            if (tengoA && tengoB)
+            {
+                Console.WriteLine("Operación segura completada.");
             }
             else
             {
-                Console.WriteLine($"[31m{usuario} no pudo comprar. Sin stock.[0m");
-                return false;
+                Console.WriteLine("No se pudo obtener los locks, evitando deadlock.");
             }
+        }
+        finally
+        {
+            if (tengoA) Monitor.Exit(_lockA);
+            if (tengoB) Monitor.Exit(_lockB);
         }
     }
 }

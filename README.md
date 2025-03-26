@@ -134,7 +134,7 @@ finally {
 }
 ```
 
-Evita errores como olvidarse del `Monitor.Exit()`](https://learn.microsoft.com/en-us/dotnet/api/system.threading.monitor.exit?view=net-9.0) si ocurre una excepción.
+Evita errores como olvidarse del [`Monitor.Exit()`](https://learn.microsoft.com/en-us/dotnet/api/system.threading.monitor.exit?view=net-9.0) si ocurre una excepción.
 
 ### ✅ 2. Código más limpio y legible
 [`lock`](https://learn.microsoft.com/es-es/dotnet/csharp/language-reference/statements/lock) reduce ruido visual y hace que el código sea más intuitivo.
